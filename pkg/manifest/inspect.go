@@ -3,13 +3,13 @@ package manifest
 import (
 	"github.com/sakeven/manifest/pkg/registry"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/docker/image"
 	"github.com/opencontainers/go-digest"
-	log "github.com/sirupsen/logrus"
 )
 
 // ImageInspect stores image inspect information

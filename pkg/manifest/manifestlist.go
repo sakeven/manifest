@@ -6,12 +6,12 @@ import (
 	"github.com/sakeven/manifest/pkg/reference"
 	"github.com/sakeven/manifest/pkg/registry"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
 	engineTypes "github.com/docker/docker/api/types"
 	registryTypes "github.com/docker/docker/api/types/registry"
 	"github.com/opencontainers/go-digest"
-	log "github.com/sirupsen/logrus"
 )
 
 // we will store up a list of blobs we must ask the registry

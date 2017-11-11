@@ -7,8 +7,8 @@ import (
 	"github.com/sakeven/manifest/pkg/manifest"
 	"github.com/sakeven/manifest/pkg/reference"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/cli/config"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -61,6 +61,8 @@ var inspectCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%s", err)
 		}
+
+		// log.Infof("%#v", namedRef.Hostname())
 
 		auth := getAuth(cmd.Flags())
 		r, err := manifest.GetHTTPClient(auth, namedRef.Hostname())
