@@ -275,23 +275,23 @@
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/configs",
-			"Comment": "v1.0.0-rc4-171-gb2567b3",
-			"Rev": "b2567b37d7b75eb4cf325b77297b140ea686ce8f"
+			"Comment": "v1.0.0-rc2-394-g810190c",
+			"Rev": "810190ceaa507aa2727d7ae6f4790c76ec150bd2"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/devices",
-			"Comment": "v1.0.0-rc4-171-gb2567b3",
-			"Rev": "b2567b37d7b75eb4cf325b77297b140ea686ce8f"
+			"Comment": "v1.0.0-rc2-394-g810190c",
+			"Rev": "810190ceaa507aa2727d7ae6f4790c76ec150bd2"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/system",
-			"Comment": "v1.0.0-rc4-171-gb2567b3",
-			"Rev": "b2567b37d7b75eb4cf325b77297b140ea686ce8f"
+			"Comment": "v1.0.0-rc2-394-g810190c",
+			"Rev": "810190ceaa507aa2727d7ae6f4790c76ec150bd2"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/user",
-			"Comment": "v1.0.0-rc4-171-gb2567b3",
-			"Rev": "b2567b37d7b75eb4cf325b77297b140ea686ce8f"
+			"Comment": "v1.0.0-rc2-394-g810190c",
+			"Rev": "810190ceaa507aa2727d7ae6f4790c76ec150bd2"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runtime-spec/specs-go",

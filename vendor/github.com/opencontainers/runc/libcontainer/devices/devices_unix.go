@@ -1,14 +1,16 @@
+// +build linux freebsd
+
 package devices
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/opencontainers/runc/libcontainer/configs"
-
-	"golang.org/x/sys/unix"
 )
 
 var (
@@ -17,45 +19,45 @@ var (
 
 // Testing dependencies
 var (
-	unixLstat     = unix.Lstat
+	osLstat       = os.Lstat
 	ioutilReadDir = ioutil.ReadDir
 )
 
 // Given the path to a device and its cgroup_permissions(which cannot be easily queried) look up the information about a linux device and return that information as a Device struct.
 func DeviceFromPath(path, permissions string) (*configs.Device, error) {
-	var stat unix.Stat_t
-	err := unixLstat(path, &stat)
+	fileInfo, err := osLstat(path)
 	if err != nil {
 		return nil, err
 	}
-
 	var (
-		devNumber = stat.Rdev
-		major     = unix.Major(devNumber)
-	)
-	if major == 0 {
-		return nil, ErrNotADevice
-	}
-
-	var (
-		devType rune
-		mode    = stat.Mode
+		devType                rune
+		mode                   = fileInfo.Mode()
+		fileModePermissionBits = os.FileMode.Perm(mode)
 	)
 	switch {
-	case mode&unix.S_IFBLK == unix.S_IFBLK:
-		devType = 'b'
-	case mode&unix.S_IFCHR == unix.S_IFCHR:
+	case mode&os.ModeDevice == 0:
+		return nil, ErrNotADevice
+	case mode&os.ModeCharDevice != 0:
+		fileModePermissionBits |= syscall.S_IFCHR
 		devType = 'c'
+	default:
+		fileModePermissionBits |= syscall.S_IFBLK
+		devType = 'b'
 	}
+	stat_t, ok := fileInfo.Sys().(*syscall.Stat_t)
+	if !ok {
+		return nil, fmt.Errorf("cannot determine the device number for device %s", path)
+	}
+	devNumber := int(stat_t.Rdev)
 	return &configs.Device{
 		Type:        devType,
 		Path:        path,
-		Major:       int64(major),
-		Minor:       int64(unix.Minor(devNumber)),
+		Major:       Major(devNumber),
+		Minor:       Minor(devNumber),
 		Permissions: permissions,
-		FileMode:    os.FileMode(mode),
-		Uid:         stat.Uid,
-		Gid:         stat.Gid,
+		FileMode:    fileModePermissionBits,
+		Uid:         stat_t.Uid,
+		Gid:         stat_t.Gid,
 	}, nil
 }
 
