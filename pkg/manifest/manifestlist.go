@@ -3,15 +3,15 @@ package manifest
 import (
 	"fmt"
 
+	"github.com/sakeven/manifest/pkg/reference"
+	"github.com/sakeven/manifest/pkg/registry"
+
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
 	engineTypes "github.com/docker/docker/api/types"
 	registryTypes "github.com/docker/docker/api/types/registry"
 	"github.com/opencontainers/go-digest"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/sakeven/manifest/reference"
-	"github.com/sakeven/manifest/registry"
 )
 
 // we will store up a list of blobs we must ask the registry
@@ -44,12 +44,12 @@ func PutManifestList(a *AuthInfo, dstImage string, srcImages ...string) (string,
 			return "", err
 		}
 
-		r, err := getHTTPClient(a, namedRef.Hostname())
+		r, err := GetHTTPClient(a, namedRef.Hostname())
 		if err != nil {
 			return "", err
 		}
 
-		repo, tagOrDigest := parse(namedRef)
+		repo, tagOrDigest := Parse(namedRef)
 		log.Debugf("%s %s", repo, tagOrDigest)
 		mfstData, err := Inspect(r, repo, tagOrDigest)
 		if err != nil {
@@ -98,7 +98,7 @@ func PutManifestList(a *AuthInfo, dstImage string, srcImages ...string) (string,
 		return "", fmt.Errorf("cannot deserialize manifest list: %s", err)
 	}
 
-	httpClient, err := getHTTPClient(a, targetRef.Hostname())
+	httpClient, err := GetHTTPClient(a, targetRef.Hostname())
 	if err != nil {
 		return "", fmt.Errorf("failed to setup HTTP client to repository: %s", err)
 	}
@@ -117,7 +117,7 @@ func PutManifestList(a *AuthInfo, dstImage string, srcImages ...string) (string,
 	}
 
 	// push final manifest
-	repo, tag := parse(targetRef)
+	repo, tag := Parse(targetRef)
 	finalDigest, err := httpClient.PushManifest(repo, tag, deserializedManifestList)
 	if err != nil {
 		return "", fmt.Errorf("push manifest list failed: %s", err)
@@ -126,7 +126,8 @@ func PutManifestList(a *AuthInfo, dstImage string, srcImages ...string) (string,
 	return string(finalDigest), nil
 }
 
-func getHTTPClient(a *AuthInfo, endpoint string) (*registry.Client, error) {
+// GetHTTPClient gets registry cleint
+func GetHTTPClient(a *AuthInfo, endpoint string) (*registry.Client, error) {
 	authConfig, err := getAuthConfig(a, nil) // TODO
 	if err != nil {
 		return nil, fmt.Errorf("Cannot retrieve authconfig: %v", err)
@@ -176,8 +177,8 @@ func mountBlobs(httpClient *registry.Client, ref reference.Named, blobsRequested
 	return nil
 }
 
+// getAuthConfig gets auth config for specific registry.
 func getAuthConfig(a *AuthInfo, index *registryTypes.IndexInfo) (engineTypes.AuthConfig, error) {
-
 	var (
 		username = a.Username
 		password = a.Password

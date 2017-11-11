@@ -1,13 +1,14 @@
 package manifest
 
 import (
+	"github.com/sakeven/manifest/pkg/registry"
+
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/docker/image"
 	"github.com/opencontainers/go-digest"
-	"github.com/sakeven/manifest/registry"
 	log "github.com/sirupsen/logrus"
 )
 

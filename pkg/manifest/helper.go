@@ -1,11 +1,13 @@
 package manifest
 
 import (
+	"github.com/sakeven/manifest/pkg/reference"
+
 	dreference "github.com/docker/distribution/reference"
-	"github.com/sakeven/manifest/reference"
 )
 
-func parse(targetRef reference.Named) (string, string) {
+// Parse returns repo name and tag or digest.
+func Parse(targetRef reference.Named) (string, string) {
 	tagOrDigest := ""
 	switch v := targetRef.(type) {
 	case dreference.Tagged:

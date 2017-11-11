@@ -3,12 +3,14 @@ package manifest
 import (
 	"os"
 	"testing"
+
+	"github.com/sakeven/manifest/pkg/registry"
 	// log "github.com/Sirupsen/logrus"
 )
 
 func TestImage(t *testing.T) {
-	r := NewClient("daocloud.io", os.Getenv("DOCKER_USERNAME"), os.Getenv("DOCKER_PASSWORD"))
-	_, err := r.Inspect("daocloud/gosample", "windows")
+	r := registry.NewClient("daocloud.io", os.Getenv("DOCKER_USERNAME"), os.Getenv("DOCKER_PASSWORD"))
+	_, err := Inspect(r, "daocloud/gosample", "windows")
 	if err != nil {
 		t.Errorf("%s", err)
 		return
