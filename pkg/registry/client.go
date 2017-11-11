@@ -27,6 +27,10 @@ func NewClient(apiPath, username, password string) *Client {
 
 // NewClientTimeout acts like NewClient but takes a timeout.
 func NewClientTimeout(apiPath, username, password string, timeout time.Duration) *Client {
+	if apiPath == "docker.io" {
+		apiPath = "https://registry-1.docker.io"
+	}
+
 	apiPath = strings.TrimRight(apiPath, "/")
 	if !strings.HasPrefix(apiPath, "http") {
 		apiPath = "http://" + apiPath
@@ -90,13 +94,11 @@ func (r *Client) newRequest(method string, url string, body io.Reader) (*http.Re
 		return nil, err
 	}
 
-	if len(r.Username) > 0 {
-		token, err := r.getToken(method, url)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	token, err := r.getToken(method, url)
+	if err != nil {
+		return nil, err
 	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	return req, nil
 }
@@ -123,7 +125,9 @@ func (r *Client) getToken(method, url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.SetBasicAuth(r.Username, r.Password)
+	if len(r.Username) > 0 {
+		req.SetBasicAuth(r.Username, r.Password)
+	}
 
 	token := struct {
 		Token string `json:"token"`
