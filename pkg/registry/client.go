@@ -33,7 +33,7 @@ func NewClientTimeout(apiPath, username, password string, timeout time.Duration)
 
 	apiPath = strings.TrimRight(apiPath, "/")
 	if !strings.HasPrefix(apiPath, "http") {
-		apiPath = "http://" + apiPath
+		apiPath = "https://" + apiPath
 	}
 
 	return &Client{
@@ -89,12 +89,13 @@ func (r *Client) newRequest(method string, url string, body io.Reader) (*http.Re
 	if !strings.HasPrefix(url, "http") {
 		url = r.APIPath + url
 	}
-	req, err := http.NewRequest(method, url, body)
+
+	token, err := r.getToken(method, url)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := r.getToken(method, url)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +111,10 @@ func (r *Client) getToken(method, url string) (string, error) {
 		return "", err
 	}
 
-	resp, err := r.client.Do(req)
+	resp, err := r.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("get www-authenticate failed %s", err)
 	}
-	defer resp.Body.Close()
 
 	wwwAuthenticate := resp.Header.Get("Www-Authenticate")
 	var realm, service, scope string

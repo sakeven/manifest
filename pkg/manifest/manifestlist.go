@@ -77,7 +77,7 @@ func PutManifestList(a *AuthInfo, dstImage string, srcImages ...string) (string,
 			},
 		}
 
-		log.Infof("Image %s is digest %s; size: %d", img, imgMfst.Digest, imgMfst.Size)
+		log.Debugf("Image %s is digest %s; size: %d", img, imgMfst.Digest, imgMfst.Size)
 
 		// if this image is in a different repo, we need to add the layer & config digests to the list of
 		// requested blob mounts (cross-repository push) before pushing the manifest list

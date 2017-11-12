@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/docker/distribution/manifest/manifestlist"
+
 	"github.com/sakeven/manifest/pkg/manifest"
 	"github.com/sakeven/manifest/pkg/reference"
 
@@ -48,7 +50,7 @@ var pushCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%s", err)
 		}
-		log.Infof("Target image %s is digest %s", targetRepo, digest)
+		fmt.Printf("Target image %s is digest %s\n", targetRepo, digest)
 	},
 }
 
@@ -57,12 +59,11 @@ var inspectCmd = &cobra.Command{
 	Short: "inspect an image repository",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		namedRef, err := reference.ParseNamed(args[0])
+		imageName := args[0]
+		namedRef, err := reference.ParseNamed(imageName)
 		if err != nil {
 			log.Fatalf("%s", err)
 		}
-
-		// log.Infof("%#v", namedRef.Hostname())
 
 		auth := getAuth(cmd.Flags())
 		r, err := manifest.GetHTTPClient(auth, namedRef.Hostname())
@@ -76,17 +77,27 @@ var inspectCmd = &cobra.Command{
 			log.Fatalf("%s", err)
 		}
 
-		for i, img := range imgs {
-			fmt.Printf("%d    Manifest Type: %s\n", i+1, img.MediaType)
-			fmt.Printf("%d           Digest: %s\n", i+1, img.Digest)
-			fmt.Printf("%d  Manifest Length: %d\n", i+1, img.Size)
-			fmt.Printf("%d         Platform:\n", i+1)
-			fmt.Printf("%d           -      OS: %s\n", i+1, img.Platform.OS)
-			fmt.Printf("%d           -    Arch: %s\n", i+1, img.Platform.Architecture)
-			fmt.Printf("%d           - OS Vers: %s\n", i+1, img.Platform.OSVersion)
-			fmt.Printf("%d           - OS Feat: %s\n", i+1, img.Platform.OSFeatures)
-			fmt.Printf("%d           - Variant: %s\n", i+1, img.Platform.Variant)
-			fmt.Printf("%d           - Feature: %s\n", i+1, strings.Join(img.Platform.Features, ","))
+		idx := 0
+		for _, img := range imgs {
+			if img.MediaType == manifestlist.MediaTypeManifestList {
+				fmt.Printf("Name:   %s\n", imageName)
+				fmt.Printf("Manifest Type: %s\n", img.MediaType)
+				fmt.Printf("Digest: %s\n", img.Digest)
+				fmt.Printf(" * Contains %d manifest references:\n", len(img.Manifest.(*manifestlist.DeserializedManifestList).Manifests))
+				idx = 0
+				continue
+			}
+			idx++
+			fmt.Printf("%d    Manifest Type: %s\n", idx, img.MediaType)
+			fmt.Printf("%d           Digest: %s\n", idx, img.Digest)
+			fmt.Printf("%d  Manifest Length: %d\n", idx, img.Size)
+			fmt.Printf("%d         Platform:\n", idx)
+			fmt.Printf("%d           -      OS: %s\n", idx, img.Platform.OS)
+			fmt.Printf("%d           -    Arch: %s\n", idx, img.Platform.Architecture)
+			fmt.Printf("%d           - OS Vers: %s\n", idx, img.Platform.OSVersion)
+			fmt.Printf("%d           - OS Feat: %s\n", idx, img.Platform.OSFeatures)
+			fmt.Printf("%d           - Variant: %s\n", idx, img.Platform.Variant)
+			fmt.Printf("%d           - Feature: %s\n", idx, strings.Join(img.Platform.Features, ","))
 			fmt.Println()
 		}
 	},

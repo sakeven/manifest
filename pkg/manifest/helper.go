@@ -8,7 +8,7 @@ import (
 
 // Parse returns repo name and tag or digest.
 func Parse(targetRef reference.Named) (string, string) {
-	tagOrDigest := ""
+	tagOrDigest := "latest"
 	switch v := targetRef.(type) {
 	case dreference.Tagged:
 		tagOrDigest = v.Tag()

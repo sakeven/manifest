@@ -14,25 +14,24 @@ import (
 
 // ImageInspect stores image inspect information
 type ImageInspect struct {
-	Size          int64
-	MediaType     string
-	Tag           string
-	Digest        digest.Digest
-	Platform      manifestlist.PlatformSpec
-	References    []string
-	CanonicalJSON []byte
-	Manifest      distribution.Manifest
+	Size       int64
+	MediaType  string
+	Tag        string
+	Digest     digest.Digest
+	Platform   manifestlist.PlatformSpec
+	References []string
+	Manifest   distribution.Manifest
 }
 
 // Inspect get images inspect information
 func Inspect(r *registry.Client, repository, tag string) ([]ImageInspect, error) {
 	m, err := r.FetchManifest(repository, tag)
 	if err != nil {
-		log.Errorf("Failed to fetch manifest %s", err)
 		return nil, err
 	}
 
 	var imgs []*image.Image
+	var ms []distribution.Manifest
 
 	switch v := m.(type) {
 	case *schema1.SignedManifest:
@@ -46,23 +45,46 @@ func Inspect(r *registry.Client, repository, tag string) ([]ImageInspect, error)
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf("%#v\n %d", img, img.Size)
 		imgs = append(imgs, img)
+		ms = append(ms, m)
 	case *manifestlist.DeserializedManifestList:
+		imgs = append(imgs, &image.Image{})
+		ms = append(ms, v)
+		for _, m := range v.Manifests {
+			log.Debugf("ml digest %s", m.Digest)
+			manifest, err := r.FetchManifest(repository, m.Digest.String())
+			if err != nil {
+				return nil, err
+			}
+			switch v := manifest.(type) {
+			case *schema2.DeserializedManifest:
+				blob, err := r.PullBlob(repository, v.Config.Digest.String())
+				if err != nil {
+					return nil, err
+				}
+				img, err := image.NewFromJSON(blob)
+				if err != nil {
+					return nil, err
+				}
+				imgs = append(imgs, img)
+				ms = append(ms, manifest)
+			}
+		}
+
+		log.Debugf("%#v", v)
 	}
 
-	return populate(imgs, tag, m)
+	return populate(imgs, tag, ms)
 }
 
-func populate(imgs []*image.Image, tag string, m distribution.Manifest) ([]ImageInspect, error) {
-	mediaType, payload, err := m.Payload()
-	if err != nil {
-		return nil, err
-	}
-
+func populate(imgs []*image.Image, tag string, m []distribution.Manifest) ([]ImageInspect, error) {
 	imgInspect := make([]ImageInspect, len(imgs))
 
 	for i, img := range imgs {
+		mediaType, payload, err := m[i].Payload()
+		if err != nil {
+			return nil, err
+		}
 		platform := manifestlist.PlatformSpec{
 			Architecture: img.Architecture,
 			OS:           img.OS,
@@ -71,13 +93,12 @@ func populate(imgs []*image.Image, tag string, m distribution.Manifest) ([]Image
 			Features:     img.OSFeatures,
 		}
 		imgInspect[i] = ImageInspect{
-			Size:          int64(len(payload)),
-			MediaType:     mediaType,
-			Tag:           tag,
-			Digest:        digest.FromBytes(payload),
-			Platform:      platform,
-			CanonicalJSON: payload,
-			Manifest:      m,
+			Size:      int64(len(payload)),
+			MediaType: mediaType,
+			Tag:       tag,
+			Digest:    digest.FromBytes(payload),
+			Platform:  platform,
+			Manifest:  m[i],
 		}
 	}
 
