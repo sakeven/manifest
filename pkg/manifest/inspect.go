@@ -1,6 +1,9 @@
 package manifest
 
 import (
+	"encoding/json"
+	"os"
+
 	"github.com/sakeven/manifest/pkg/registry"
 
 	log "github.com/Sirupsen/logrus"
@@ -32,6 +35,7 @@ func Inspect(r *registry.Client, repository, tag string) ([]ImageInspect, error)
 
 	var imgs []*image.Image
 	var ms []distribution.Manifest
+	var platforms []manifestlist.PlatformSpec
 
 	switch v := m.(type) {
 	case *schema1.SignedManifest:
@@ -46,59 +50,59 @@ func Inspect(r *registry.Client, repository, tag string) ([]ImageInspect, error)
 			return nil, err
 		}
 		imgs = append(imgs, img)
+		platform := manifestlist.PlatformSpec{
+			Architecture: img.Architecture,
+			OS:           img.OS,
+			OSVersion:    img.OSVersion,
+			OSFeatures:   img.OSFeatures,
+		}
+		platforms = append(platforms, platform)
 		ms = append(ms, m)
 	case *manifestlist.DeserializedManifestList:
-		imgs = append(imgs, &image.Image{})
+		json.NewEncoder(os.Stdout).Encode(v)
 		ms = append(ms, v)
+		platforms = append(platforms, manifestlist.PlatformSpec{})
 		for _, m := range v.Manifests {
 			log.Debugf("ml digest %s", m.Digest)
 			manifest, err := r.FetchManifest(repository, m.Digest.String())
 			if err != nil {
 				return nil, err
 			}
-			switch v := manifest.(type) {
-			case *schema2.DeserializedManifest:
-				blob, err := r.PullBlob(repository, v.Config.Digest.String())
-				if err != nil {
-					return nil, err
-				}
-				img, err := image.NewFromJSON(blob)
-				if err != nil {
-					return nil, err
-				}
-				imgs = append(imgs, img)
-				ms = append(ms, manifest)
-			}
+			ms = append(ms, manifest)
+			platforms = append(platforms, m.Platform)
+			// switch v := manifest.(type) {
+			// case *schema2.DeserializedManifest:
+			// 	blob, err := r.PullBlob(repository, v.Config.Digest.String())
+			// 	if err != nil {
+			// 		return nil, err
+			// 	}
+			// 	img, err := image.NewFromJSON(blob)
+			// 	if err != nil {
+			// 		return nil, err
+			// 	}
+			// 	imgs = append(imgs, img)
+			// }
 		}
-
 		log.Debugf("%#v", v)
 	}
 
-	return populate(imgs, tag, ms)
+	return populate(platforms, tag, ms)
 }
 
-func populate(imgs []*image.Image, tag string, m []distribution.Manifest) ([]ImageInspect, error) {
-	imgInspect := make([]ImageInspect, len(imgs))
-
-	for i, img := range imgs {
-		mediaType, payload, err := m[i].Payload()
+func populate(platforms []manifestlist.PlatformSpec, tag string, ms []distribution.Manifest) ([]ImageInspect, error) {
+	imgInspect := make([]ImageInspect, len(ms))
+	for i, m := range ms {
+		mediaType, payload, err := m.Payload()
 		if err != nil {
 			return nil, err
-		}
-		platform := manifestlist.PlatformSpec{
-			Architecture: img.Architecture,
-			OS:           img.OS,
-			OSVersion:    img.OSVersion,
-			OSFeatures:   img.OSFeatures,
-			Features:     img.OSFeatures,
 		}
 		imgInspect[i] = ImageInspect{
 			Size:      int64(len(payload)),
 			MediaType: mediaType,
 			Tag:       tag,
 			Digest:    digest.FromBytes(payload),
-			Platform:  platform,
-			Manifest:  m[i],
+			Platform:  platforms[i],
+			Manifest:  m,
 		}
 	}
 

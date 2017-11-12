@@ -21,8 +21,7 @@ func Run() {
 	rootCmd.PersistentFlags().String("username", "", "Username to access docker repository")
 	rootCmd.PersistentFlags().String("password", "", "Password to access docker repository")
 	rootCmd.PersistentFlags().String("cfg", config.Dir(), "docker configure file to access docker repository")
-	rootCmd.AddCommand(pushCmd)
-	rootCmd.AddCommand(inspectCmd)
+	rootCmd.AddCommand(createCmd, inspectCmd, annotateCmd)
 	rootCmd.Execute()
 }
 
@@ -37,11 +36,11 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-var pushCmd = &cobra.Command{
-	Use:   "push <target repository> <source repositories ...>",
+var createCmd = &cobra.Command{
+	Use:   "create <target repository> <source repositories ...>",
 	Short: "create and push a manifest list",
 	Long:  `Create a manifest list named as target repository from source repositories, then push to registry`,
-	Args:  cobra.MinimumNArgs(3),
+	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		auth := getAuth(cmd.Flags())
 		targetRepo := args[0]
@@ -51,6 +50,22 @@ var pushCmd = &cobra.Command{
 			log.Fatalf("%s", err)
 		}
 		fmt.Printf("Target image %s is digest %s\n", targetRepo, digest)
+	},
+}
+
+var annotateCmd = &cobra.Command{
+	Use:   "annotate <target repository>",
+	Short: "annotate a manifest with platform spec",
+	Args:  cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		// auth := getAuth(cmd.Flags())
+		// targetRepo := args[0]
+		// srcRepo := args[1:]
+		// digest, err := manifest.PutManifestList(auth, targetRepo, srcRepo...)
+		// if err != nil {
+		// 	log.Fatalf("%s", err)
+		// }
+		// fmt.Printf("Target image %s is digest %s\n", targetRepo, digest)
 	},
 }
 
