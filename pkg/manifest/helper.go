@@ -17,3 +17,11 @@ func Parse(targetRef reference.Named) (string, string) {
 	}
 	return targetRef.RemoteName(), tagOrDigest
 }
+
+func isSameRepo(a, b reference.Named) bool {
+	return a.FullName() == b.FullName()
+}
+
+func isSameHub(a, b reference.Named) bool {
+	return a.Hostname() == b.Hostname()
+}

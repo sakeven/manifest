@@ -34,7 +34,6 @@ func PutManifestList(a *AuthInfo, dstImage string, srcImages ...string) (string,
 	if err != nil {
 		return "", fmt.Errorf("error parsing name for %s: %s", dstImage, err)
 	}
-
 	// Now create the manifest list payload by looking up the manifest schemas
 	// for the constituent images:
 	log.Info("Retrieving digests of images...")
@@ -56,9 +55,9 @@ func PutManifestList(a *AuthInfo, dstImage string, srcImages ...string) (string,
 			return "", fmt.Errorf("inspect of image %s failed with error: %v", img, err)
 		}
 
-		// TODO support different repositroy.
-		if namedRef.Hostname() != targetRef.Hostname() {
-			return "", fmt.Errorf("cannot use source images from a different registry than the target image: %s != %s", namedRef.Hostname(), targetRef.Hostname())
+		// TODO support different hub
+		if isSameHub(namedRef, targetRef) == false {
+			return "", fmt.Errorf("cannot use source images from a different registry than the target image")
 		}
 
 		if len(mfstData) > 1 {
@@ -81,7 +80,7 @@ func PutManifestList(a *AuthInfo, dstImage string, srcImages ...string) (string,
 
 		// if this image is in a different repo, we need to add the layer & config digests to the list of
 		// requested blob mounts (cross-repository push) before pushing the manifest list
-		if targetRef.FullName() != namedRef.FullName() {
+		if isSameRepo(targetRef, namedRef) == false {
 			log.Debugf("Adding manifest references of %s to blob mount requests", img)
 			for _, layer := range imgMfst.References {
 				blobMountRequests = append(blobMountRequests, blobMount{FromRepo: namedRef.FullName(), Digest: layer})
@@ -159,7 +158,7 @@ func pushReferences(httpClient *registry.Client, ref reference.Named, manifests 
 			return fmt.Errorf("couldn't push manifest: %v", err)
 		}
 		if dgstResult != dgst {
-			return fmt.Errorf("Pushed referenced manifest received a different digest: expected %s, got %s", dgst, dgstResult)
+			return fmt.Errorf("pushed referenced manifest received a different digest: expected %s, got %s", dgst, dgstResult)
 		}
 	}
 	return nil
