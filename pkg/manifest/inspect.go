@@ -1,9 +1,6 @@
 package manifest
 
 import (
-	"encoding/json"
-	"os"
-
 	"github.com/sakeven/manifest/pkg/registry"
 
 	log "github.com/Sirupsen/logrus"
@@ -59,7 +56,7 @@ func Inspect(r *registry.Client, repository, tag string) ([]ImageInspect, error)
 		platforms = append(platforms, platform)
 		ms = append(ms, m)
 	case *manifestlist.DeserializedManifestList:
-		json.NewEncoder(os.Stdout).Encode(v)
+		// json.NewEncoder(os.Stdout).Encode(v)
 		ms = append(ms, v)
 		platforms = append(platforms, manifestlist.PlatformSpec{})
 		for _, m := range v.Manifests {
